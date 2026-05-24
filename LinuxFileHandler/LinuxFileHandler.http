@@ -1,0 +1,6 @@
+@LinuxFileHandler_HostAddress = http://localhost:5093
+
+GET {{LinuxFileHandler_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
