@@ -1,4 +1,5 @@
-﻿using LinuxFileHandler.Entities;
+﻿using LinuxFileHandler.Configurations;
+using LinuxFileHandler.Entities;
 
 namespace LinuxFileHandler.BLL.Interfaces
 {
@@ -7,6 +8,7 @@ namespace LinuxFileHandler.BLL.Interfaces
 	/// </summary>
 	public interface IUploadFileProcessor
 	{
-		Task<Tuple<MemoryStream,FileProcessResult>> ProcessFileAsync(IFormFile file, string uploadsPath, string processedPath, Guid uploadId, IWebHostEnvironment environment);
+		Task<Tuple<MemoryStream,FileProcessResult>> ProcessFileAsync(IFormFile file, ApplicationSettings applicationSettings, 
+			Guid uploadId, IWebHostEnvironment environment);
 	}
 }

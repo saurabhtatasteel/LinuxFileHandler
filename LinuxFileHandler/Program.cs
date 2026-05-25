@@ -1,3 +1,4 @@
+using LinuxFileHandler.Configurations;
 using Serilog;
 using System.Security.Cryptography;
 
@@ -11,8 +12,12 @@ Log.Logger = new LoggerConfiguration()
 	.Enrich.FromLogContext()
 	.Enrich.WithMachineName()
 	.Enrich.WithThreadId()
+	//.MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information)
+	.MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
+	.MinimumLevel.Information()
+	.WriteTo.Console()
 	.WriteTo.File(
-	"Logs/log -. txt",
+	"Logs/log-. txt",
 	fileSizeLimitBytes: 10 * 1024 * 1024, // 10 MB maximum file size to keep in logs
 	rollOnFileSizeLimit: true,
 	rollingInterval: RollingInterval.Day,
@@ -22,8 +27,12 @@ Log.Logger = new LoggerConfiguration()
 // Replace default logging
 builder.Host.UseSerilog();
 
+Log.Information("Application starting...");
+
 // Add services to the container.
 builder.Services.AddSingleton<Serilog.ILogger>(Log.Logger);
+
+builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection("ApplicationSettings"));
 
 #endregion
 

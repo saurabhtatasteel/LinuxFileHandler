@@ -1,4 +1,5 @@
 ﻿using LinuxFileHandler.BLL.Interfaces;
+using LinuxFileHandler.Configurations;
 using LinuxFileHandler.Entities;
 using LinuxFileHandler.Utilities;
 using System.Diagnostics;
@@ -10,21 +11,20 @@ namespace LinuxFileHandler.BLL
 	{
 
 		private readonly SRL.ILogger _logger;
-		private readonly IConfiguration _configuration;
-
-		public UploadFileProcessor(SRL.ILogger logger, IConfiguration configuration)
+		//private readonly IConfiguration _configuration;
+		public UploadFileProcessor(SRL.ILogger logger)//, IConfiguration configuration)
 		{
 			_logger = logger;
-			_configuration = configuration;
+			//_configuration = configuration;
 		}
 
-		public async Task<Tuple<MemoryStream, FileProcessResult>> ProcessFileAsync(IFormFile file, string uploadsPath, string processedPath, Guid uploadId, IWebHostEnvironment environment)
+		public async Task<Tuple<MemoryStream, FileProcessResult>> ProcessFileAsync(IFormFile file, ApplicationSettings applicationSettings,
+			Guid uploadId, IWebHostEnvironment environment)
 		{
 			// Validate file
-			var validFileTypes = (_configuration["ApplicationSettings:ValidFileTypes"] ?? string.Empty)
-		.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+			var validFileTypes = applicationSettings.ValidFileTypes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-			var maxFileSize = _configuration["ApplicationSettings:MaxFileSizeMB"];
+			var maxFileSize = applicationSettings.MaxFileSizeMB;
 
 			if (!Validator.IsValidPdf(file, validFileTypes, long.Parse(maxFileSize), out ValidationResult validationResult))
 			{
@@ -47,16 +47,25 @@ namespace LinuxFileHandler.BLL
 			else
 				_logger.Information("UploadID {uploadId} : File validation succeeded", uploadId);
 
+			if (!Directory.Exists(applicationSettings.UploadsPath))
+				Directory.CreateDirectory(applicationSettings.UploadsPath);
 
-			Directory.CreateDirectory(uploadsPath);
-			Directory.CreateDirectory(processedPath);
+			if (!Directory.Exists(applicationSettings.ProcessedPath))
+				Directory.CreateDirectory(applicationSettings.ProcessedPath);
 
 			_logger.Information("UpLoadID {uploadId} : Uploadpath : {uploadsPath}, ProcessedPath : {processedPath}",
-			uploadId, uploadsPath, processedPath);
+			uploadId, applicationSettings.UploadsPath, applicationSettings.ProcessedPath);
 
 			// Save uploaded file
 			var uniqueFileName = Utilities.Utilities.GenerateUniqueFileName(file);
-			var uploadedFilePath = Path.Combine(uploadsPath, uniqueFileName);
+			var uploadedFilePath = Path.Combine(applicationSettings.UploadsPath, uniqueFileName);
+			var fullUploadedFilePath = Path.Combine(applicationSettings.FullUploadsPath, uniqueFileName);
+			var currDirectory = Directory.GetCurrentDirectory();
+
+			_logger.Information("UpLoadID {uploadId} : UploadFilepathWithFileName : {uploadsPath}, UniqueFileName : {uniqueFileName}, " +
+				"UploadedFilePath : {uploadedFilePath}, ProcessedPath : {processedPath}, CurrentDirectory : {currDirectory}",
+			uploadId, applicationSettings.UploadsPath, uniqueFileName, uploadedFilePath, applicationSettings.ProcessedPath, currDirectory);
+
 			using (var stream = new FileStream(uploadedFilePath, FileMode.Create))
 			{
 				await file.CopyToAsync(stream);
@@ -65,11 +74,17 @@ namespace LinuxFileHandler.BLL
 			_logger.Information("UploadID {uploadId} : File copied to : {uploadedFilePath}", uploadId, uploadedFilePath);
 
 			string scriptPath;
-			var batchFileOS = _configuration["ApplicationSettings:BatchFileOS"];
+			var batchFileOS = applicationSettings.BatchFileOS;
 			ProcessStartInfo startInfo;
-			if (batchFileOS == "Linux")
+			if (String.Compare(batchFileOS, "Linux", true) == 0)
 			{
-				scriptPath = Path.Combine(environment.ContentRootPath, "Scripts", "linux-process-file.sh");
+				//scriptPath = Path.Combine(environment.ContentRootPath, "scripts", "linux-process-file.sh");
+				scriptPath = Path.Combine(applicationSettings.AppBasePath, "scripts", "linux-process-file.sh");
+
+
+				var scriptPathFound = Directory.Exists(scriptPath);
+				_logger.Information("UploadID {uploadId} : Script path {scriptPath} found : {scriptPathFound}", uploadId, scriptPath, scriptPathFound);
+
 				startInfo = new ProcessStartInfo
 				{
 					FileName = "/bin/bash",
@@ -81,8 +96,8 @@ namespace LinuxFileHandler.BLL
 				};
 
 				startInfo.ArgumentList.Add(scriptPath);
-				startInfo.ArgumentList.Add(uploadedFilePath);
-				startInfo.ArgumentList.Add(processedPath);
+				startInfo.ArgumentList.Add(fullUploadedFilePath);
+				startInfo.ArgumentList.Add(applicationSettings.FullProcessedPath);
 
 			}
 
@@ -90,7 +105,7 @@ namespace LinuxFileHandler.BLL
 			{
 
 
-				scriptPath = Path.Combine(environment.ContentRootPath, "Scripts", "win-process-file.bat");
+				scriptPath = Path.Combine(environment.ContentRootPath, "scripts", "win-process-file.bat");
 				startInfo = new ProcessStartInfo
 				{
 					FileName = "cmd.exe",
@@ -103,7 +118,7 @@ namespace LinuxFileHandler.BLL
 				startInfo.ArgumentList.Add("/c");
 				startInfo.ArgumentList.Add(scriptPath);
 				startInfo.ArgumentList.Add(uploadedFilePath);
-				startInfo.ArgumentList.Add(processedPath);
+				startInfo.ArgumentList.Add(applicationSettings.FullProcessedPath);
 
 			}
 
@@ -136,7 +151,7 @@ namespace LinuxFileHandler.BLL
 				_logger.Information("UploadID {uploadId} : Batch file process completed", uploadId);
 
 			// Expected processed file
-			var processedFilePath = Path.Combine(processedPath, uniqueFileName);
+			var processedFilePath = Path.Combine(applicationSettings.ProcessedPath, uniqueFileName);
 			if (!System.IO.File.Exists(processedFilePath))
 			{
 				_logger.Error("UploadID {uploadId} :Processed file not found for {FileName} after script execution. Output: {Output}, Error: {Error}",

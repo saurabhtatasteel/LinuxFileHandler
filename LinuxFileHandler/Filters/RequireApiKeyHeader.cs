@@ -6,8 +6,8 @@ namespace LinuxFileHandler.Filters
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 	public class RequireApiKeyHeader : RequireHeaderAttribute
 	{
-		private const string ApiKeyHeaderName = "x-api-key";
-		private const string ApiKeyConfigurationKey = "ApplicationSettings:x-api-key";
+		private const string ApiKeyHeaderName = "xapikey";
+		private const string ApiKeyConfigurationKey = "ApplicationSettings:xapikey";
 
 		public RequireApiKeyHeader() : base(ApiKeyHeaderName) { }
 

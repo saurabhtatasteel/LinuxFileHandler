@@ -1,4 +1,7 @@
-﻿namespace LinuxFileHandler.Utilities
+﻿using LinuxFileHandler.Configurations;
+using System.Net.NetworkInformation;
+
+namespace LinuxFileHandler.Utilities
 {
 	public static class Validator
 	{
@@ -31,6 +34,40 @@
 			// all validations passed
 			return true;
 
+		}
+
+		/// <summary>
+		/// Validate ApplicationSettings value in appSettings.json
+		/// </summary>
+		/// <param name="applicationSettings"></param>
+		/// <returns></returns>
+		public static bool IsValid(this ApplicationSettings applicationSettings)
+		{
+			if (applicationSettings == null ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.ValidFileTypes)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.FullUploadsPath)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.UploadsPath)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.FullProcessedPath)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.AppBasePath)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.BatchFileOS)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.BatchFileOutputReturnType)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.XAPIKey)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.MaxFileSizeMB)) ||
+				(applicationSettings != null && !HasValueInField(applicationSettings.ProcessedPath))
+				)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		private static bool HasValueInField(string param)
+		{
+			if (string.IsNullOrEmpty(param) || string.IsNullOrWhiteSpace(param))
+				return false;
+			else
+				return true;
 		}
 
 

@@ -1,23 +1,37 @@
 ﻿using LinuxFileHandler.BLL;
+using LinuxFileHandler.Configurations;
 using LinuxFileHandler.Entities;
+using LinuxFileHandler.Filters;
+using LinuxFileHandler.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SRL = Serilog;
 
 namespace LinuxFileHandler.Controllers
 {
+	[RequireApiKeyHeader]
 	[Route("api/[controller]")]
 	[ApiController]
 	public class UploadFileController : ControllerBase
 	{
 		private readonly IWebHostEnvironment _environment;
 		private readonly SRL.ILogger _logger;
-		private readonly IConfiguration _configuration;
+		//private readonly IConfiguration _configuration;
+		private readonly ApplicationSettings _applicationSettings;
 
-		public UploadFileController(IWebHostEnvironment webHostEnvironment, SRL.ILogger logger, IConfiguration configuration)
+		public UploadFileController(IWebHostEnvironment webHostEnvironment, SRL.ILogger logger,
+			//IConfiguration configuration, 
+			IOptions<ApplicationSettings> applicationSettings)
 		{
 			_environment = webHostEnvironment;
 			_logger = logger;
-			_configuration = configuration;
+			//_configuration = configuration;
+			_applicationSettings = applicationSettings.Value;
+			_applicationSettings.FullUploadsPath = Path.Combine(_applicationSettings.AppBasePath,
+				_applicationSettings.UploadsPath) ?? Path.Combine(_environment.ContentRootPath, "Uploads");
+
+			_applicationSettings.FullProcessedPath = Path.Combine(_applicationSettings.AppBasePath,
+				_applicationSettings.ProcessedPath) ?? Path.Combine(_environment.ContentRootPath, "Processed");
 		}
 
 		[HttpPost("upload")]
@@ -25,14 +39,23 @@ namespace LinuxFileHandler.Controllers
 		{
 			var guid = Guid.NewGuid();
 
+			if (file == null)
+			{
+				_logger.Information("UploadID {guid} : File is null. Uploading file failed", guid);
+				return StatusCode(400, $"UploadID {guid} : Upload valid file. File is missing");
+			}
+
 			_logger.Information("Upload {guid} : Received upload request for file {FileName}", guid, file?.FileName);
 
 			try
-			{
-				var output = await new UploadFileProcessor(_logger, _configuration).
-					ProcessFileAsync(file, _configuration["ApplicationSettings:UploadsPath"] ??
-					Path.Combine(_environment.ContentRootPath, "Uploads"), _configuration["ApplicationSettings:ProcessedPath"] ??
-					Path.Combine(_environment.ContentRootPath, "Processed"), guid, _environment).ConfigureAwait(false);
+			{				
+				if (!_applicationSettings.IsValid())
+				{
+					return StatusCode(500, $"UploadID {guid} : Missing configuration");
+				}
+
+				var output = await new UploadFileProcessor(_logger).
+					ProcessFileAsync(file, _applicationSettings, guid, _environment).ConfigureAwait(false);
 
 				if (!output.Item2.IsSuccess)
 				{
@@ -48,7 +71,8 @@ namespace LinuxFileHandler.Controllers
 					if (output.Item1 != null)
 					{
 						_logger.Information("UploadID {guid} : File {FileName} processed successfully", guid, file?.FileName);
-						var batchFileOutputReturnType = _configuration["ApplicationSettings:BatchFileOutputReturnType"];
+						//var batchFileOutputReturnType = _configuration["ApplicationSettings:BatchFileOutputReturnType"];
+						var batchFileOutputReturnType = _applicationSettings.BatchFileOutputReturnType;
 						return File(
 						output.Item1,
 						//"application/octet-strean",
@@ -64,7 +88,8 @@ namespace LinuxFileHandler.Controllers
 			}
 			catch (Exception ex)
 			{
-				_logger.Error("UploadID {guid} : Error processing file {FileName}", guid, file?.FileName ?? ex.Message);
+				_logger.Error("UploadID {guid} : Error processing file {FileName} : Error: {message}, {ex.StackTrace}",
+					guid, file?.FileName ?? "null", ex.Message, ex.StackTrace);
 				return StatusCode(500, $"UploadID {guid} : Internal server error: {ex.Message}");
 			}
 

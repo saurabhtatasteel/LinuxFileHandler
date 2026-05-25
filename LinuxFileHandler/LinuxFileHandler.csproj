@@ -9,24 +9,30 @@
   <ItemGroup>
     <Compile Remove="Logs\**" />
     <Compile Remove="Processed\**" />
-    <Compile Remove="Scripts\**" />
     <Compile Remove="TestData\**" />
     <Compile Remove="Uploads\**" />
     <Content Remove="Logs\**" />
     <Content Remove="Processed\**" />
-    <Content Remove="Scripts\**" />
     <Content Remove="TestData\**" />
     <Content Remove="Uploads\**" />
     <EmbeddedResource Remove="Logs\**" />
     <EmbeddedResource Remove="Processed\**" />
-    <EmbeddedResource Remove="Scripts\**" />
     <EmbeddedResource Remove="TestData\**" />
     <EmbeddedResource Remove="Uploads\**" />
     <None Remove="Logs\**" />
     <None Remove="Processed\**" />
-    <None Remove="Scripts\**" />
     <None Remove="TestData\**" />
     <None Remove="Uploads\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="scripts\linux-process-file.sh" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="scripts\linux-process-file.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +42,12 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Scripts\win-process-file.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
