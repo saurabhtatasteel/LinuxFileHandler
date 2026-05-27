@@ -82,7 +82,7 @@ namespace LinuxFileHandler.BLL
 				scriptPath = Path.Combine(applicationSettings.AppBasePath, "scripts", "linux-process-file.sh");
 
 
-				var scriptPathFound = Directory.Exists(scriptPath);
+				var scriptPathFound = File.Exists(scriptPath);
 				_logger.Information("UploadID {uploadId} : Script path {scriptPath} found : {scriptPathFound}", uploadId, scriptPath, scriptPathFound);
 
 				startInfo = new ProcessStartInfo
