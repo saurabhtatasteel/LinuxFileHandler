@@ -17,7 +17,7 @@ Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Information()
 	.WriteTo.Console()
 	.WriteTo.File(
-	"Logs/log-. txt",
+	"Logs/log-.txt",
 	fileSizeLimitBytes: 10 * 1024 * 1024, // 10 MB maximum file size to keep in logs
 	rollOnFileSizeLimit: true,
 	rollingInterval: RollingInterval.Day,
