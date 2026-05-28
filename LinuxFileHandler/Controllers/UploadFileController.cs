@@ -45,7 +45,8 @@ namespace LinuxFileHandler.Controllers
 				return StatusCode(400, $"UploadID {guid} : Upload valid file. File is missing");
 			}
 
-			_logger.Information("Upload {guid} : Received upload request for file {FileName}", guid, file?.FileName);
+			
+			_logger.Information($"Upload {guid} : Received upload request for file {file.FileName}", guid, file?.FileName);
 
 			try
 			{				
@@ -82,7 +83,7 @@ namespace LinuxFileHandler.Controllers
 					else
 					{
 						_logger.Error("UploadID {guid} : File {FileName} processing failed. Error: {Message}", guid, file?.FileName, output.Item2?.Message);
-						return StatusCode(508, $"UploadID {guid} : Internal server error: {output.Item2.Message}");
+						return StatusCode(500, $"UploadID {guid} : Internal server error: {output.Item2.Message}");
 					}
 				}
 			}

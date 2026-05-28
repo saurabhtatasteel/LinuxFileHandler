@@ -33,7 +33,7 @@ namespace LinuxFileHandler.BLL
 				validationResult == ValidationResult.InvalidFileType ? $"Invalid file type" :
 				validationResult == ValidationResult.NoFileUploaded ? $"No file uploaded" : String.Empty;
 
-				_logger.Error($"UploadID (uploadId) : File {file?.FileName} upload failed. {validationResultFailReason}. Please upload a valid {string.Join(" or ", validFileTypes)} file that meets the specified criteria");
+				_logger.Error($"UploadID {uploadId} : File {file?.FileName} upload failed. {validationResultFailReason}. Please upload a valid {string.Join(" or ", validFileTypes)} file that meets the specified criteria");
 
 				return await Task.FromResult(new Tuple<MemoryStream, FileProcessResult>(null, new FileProcessResult
 				{
