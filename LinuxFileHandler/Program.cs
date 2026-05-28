@@ -48,7 +48,12 @@ app.MapHealthChecks("/health");
 app.MapGet("/tks", (int n) =>
 {
 	var ticks = DateTime.UtcNow.AddDays(n).Ticks;
-	return Results.Ok(new { Ticks = ticks });
+	return Results.Ok(new { Ticks = ticks, AppliedDateTime = new DateTime(ticks) });
+}).ExcludeFromDescription();
+
+app.MapGet("/tksdt", (long tks) =>
+{	
+	return Results.Ok(new { AppliedDateTime = new DateTime(tks) });
 }).ExcludeFromDescription();
 
 app.MapGet("/gkey", () =>
