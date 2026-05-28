@@ -51,10 +51,11 @@ app.MapGet("/tks", (int n) =>
 	return Results.Ok(new { Ticks = ticks, AppliedDateTime = new DateTime(ticks) });
 }).ExcludeFromDescription();
 
-app.MapGet("/tksdt", (long tks) =>
-{	
-	return Results.Ok(new { AppliedDateTime = new DateTime(tks) });
-}).ExcludeFromDescription();
+// To check ticks datetime
+//app.MapGet("/tksdt", (long tks) =>
+//{	
+//	return Results.Ok(new { AppliedDateTime = new DateTime(tks) });
+//}).ExcludeFromDescription();
 
 app.MapGet("/gkey", () =>
 {
