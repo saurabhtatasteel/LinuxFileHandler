@@ -1,0 +1,296 @@
+
+Account:saurabh.ext@InfraBeatSophosXGFirewall
+Secret (HEX):b2a300fb79f0593fed71640b47b87633
+Secret (BASE32):WKRQB63Z6BMT73LRMQFUPODWGM
+
+Open PuTTY
+Host Name = VM IP
+Port = 22
+Connection type = SSH
+Open
+Enter username/password
+
+
+VPN and VM Details
+
+
+Username = saurabh.ext
+
+Password = Extsseccp@0135
+
+Also pls access the 10.1.0.195 VM.
+
+Username = saurabh
+Password = Bharkar@54321
+
+---------------------------------------
+ID - ubuntuadmin
+PWD - admin@123
+
+--Install .NET SDK in Ubuntu
+-Update packages:
+sudo apt update
+sudo apt upgrade -y
+
+-Install Microsoft package repo:
+wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+
+-Update again
+sudo apt update
+
+
+--Install.NET runtime
+sudo apt install -y aspnetcore-runtime-8.0
+
+--Open Windows new terminal and go to project
+D:\Trials\LinuxFileHandler\LinuxFileHandler
+
+--Build project and publish
+dotnet build
+dotnet publish -c Release -o publish
+
+--This creates publish folder
+
+--Create a folder in linux
+mkdir -p ~/apps/linuxfilehandler
+
+--Move to folder
+cd ~/apps/linuxfilehandler
+
+--Move to project path to check if exists in d drive [optional]
+cd /mnt/d
+
+
+--Copy project publish folder contents to the publish directory in linux
+cp -r /mnt/d/Trials/LinuxFileHandler/LinuxFileHandler/publish/* ~/apps/linuxfilehandler/
+
+--Move to folder and verify copied files
+cd ~/apps/linuxfilehandler
+ls
+
+--Run project
+dotnet LinuxFileHandler.dll
+
+--Check SDK and Frameworks installed using below command [Optional]
+dotnet --info
+
+--Change appsettings.json values [Optional]
+cat appsettings.json - To view
+nano appsettings.json - To edit
+After changing on terminal press Ctrl+O and then Ctrl+X
+
+--Command to go 1 step back parent directory [Optional]
+cd ..
+
+--Command to clean folder and files within a directory [Optional]
+rm -rf *
+
+--Command to verify current working directory [Optional]
+pwd
+
+--Command to see all the files [Optional]
+find . -type f
+
+--Command to see all the directories [Optional]
+find . -type d
+
+--Command to clear screen [Optional]
+clear
+
+./scripts/linux-process-file.sh ~/apps/linuxfilehandler/appsettings.json ~/apps/linuxfilehandler/Uploads/appsettings.json
+
+ Source: ~/apps/linuxfilehandler/Uploads/Test_20260525064343547.txt
+
+file LinuxFileHandler.dll
+
+ASPNETCORE_URLS=http://0.0.0.0:8080 dotnet LinuxFileHandler.dll
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://0.0.0.0:8080 dotnet LinuxFileHandler.dll
+
+--To check the current OS in the Linux VM connected via Putty
+cat /etc/os-release
+
+
+***************systemd to be implemented*************
+
+SUSE setup-
+--------------------
+
+--To check Linux architecture
+uname -m
+
+--Check Internet connetivity inside VM [Optional]
+ping 8.8.8.8
+
+--Check DNS resolution[Optional]
+ping google.com
+
+--Check Current DNS Configuration
+cat /etc/resolv.conf
+
+--Add Google DNS Temporarily
+sudo vi /etc/resolv.conf
+Press i for insert mode.
+Paste below-
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+
+Press Esc
+Type :wq
+
+--Test Again
+ping google.com
+
+
+--Try to install Microsoft installer package
+sudo rpm -Uvh https://packages.microsoft.com/config/sles/15/packages-microsoft-prod.rpm
+
+--Check Installed Repository Package
+rpm -qa | grep microsoft
+
+It should show something like below
+packages-microsoft-prod-1.0-1.x86_64
+
+--Check Zypper Repository List
+zypper repos
+
+You should see a Microsoft repository entry similar to:
+packages-microsoft-com-prod
+
+--Refresh Repositories
+sudo zypper refresh
+
+If repository is configured correctly, it should refresh without errors.
+
+--Verify .NET Packages Are Available
+zypper search aspnetcore
+
+If Microsoft repo is working, you’ll see packages like:
+aspnetcore-runtime-8.0
+
+--Install and Verify .NET
+sudo zypper install aspnetcore-runtime-8.0
+
+--Verify dotnet installation
+dotnet --info
+
+--Copy the published folder to linux VM using WinSCP and run below command
+dotnet LinuxFileHandler.dll
+
+--Try below command to get the ipaddress of linux VM
+ip addr
+It should return output like below (not 127.0.0.1)
+
+inet 10.1.0.195/24 brd 10.1.0.255 scope global eth0
+
+--Start firewalld Service [Don't run else it stops access to linux VM]
+sudo systemctl start firewalld
+
+--For development environment running
+ASPNETCORE_URLS=http://0.0.0.0:5000 dotnet LinuxFileHandler.dll
+
+
+--Once tested let's deploy it properly on the SUSE Linux server
+
+--create systemd service:
+sudo vi /etc/systemd/system/linuxfilehandler.service
+
+Paste below into it
+
+[Unit]
+Description=LinuxFileHandler API
+After=network.target
+
+[Service]
+WorkingDirectory=/home/saurabh/linuxfilehandler
+ExecStart=/usr/bin/dotnet /home/saurabh/linuxfilehandler/LinuxFileHandler.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=linuxfilehandler
+User=saurabh
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://0.0.0.0:5000
+
+[Install]
+WantedBy=multi-user.target
+
+-Save
+Press :wq
+Press Enter
+
+
+--Reload Systemd by running below commands
+sudo systemctl daemon-reload
+
+--Enable Service at Startup
+sudo systemctl enable linuxfilehandler
+
+--Start service
+sudo systemctl start linuxfilehandler
+
+-Verify Service Status
+sudo systemctl status linuxfilehandler
+
+It should as below
+active (running)
+
+--Verify API access
+
+--View Logs[Optional]
+journalctl -u linuxfilehandler -f
+
+--Service Management Commands[Optional]
+-For restart
+sudo systemctl restart linuxfilehandler
+
+-For stop[Optional]
+sudo systemctl stop linuxfilehandler
+
+--Verify autostart
+systemctl is-enabled linuxfilehandler
+
+It should return 
+enabled
+
+--****************Talk next about Configure Nginx reverse proxy, HTTPS/SSL, Domain mapping***************
+
+
+
+--Exit without saving [Optional]
+Press Esc
+Type --> :q!
+Press Enter
+
+q = quit
+! = force quit without saving changes
+
+==============Create a new GIT repo for a project==================
+
+Create project locally and build.
+Go at the solution level
+
+--Initialize Git Repository
+git init
+
+--Create .gitignore
+dotnet new gitignore
+
+--Add Files to Git
+git add .
+
+--Commit Files
+git commit -m "Initial commit"
+
+--Create New Repository on GitHub
+
+--Connect Local Repo to GitHub
+git remote add origin https://github.com/saurabhtatasteel/LinuxFileHandler.git
+
+--Push Code to GitHub
+git branch -M main
+git push -u origin main
+
+--Verify Repository and check if the solution exists in Github portal
+
+====================================================================
